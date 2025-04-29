@@ -1,52 +1,101 @@
-const plotBoundary = new GeoJSONLayer({
-  url: "YOUR_RAW_GEOJSON_URL_HERE",
-  popupTemplate: {
-    title: "Plot Details",
-    content: "Plot ID: {PROPERTY_ID}<br>Area: {RIICO_PLOT_AREA} sq m"
-  },
-  renderer: {
-    type: "simple",
-    symbol: {
-      type: "simple-fill",
-      color: [0, 255, 0, 0.5],  // Semi-transparent green fill
-      outline: {
-        color: [0, 0, 0],       // Black border
-        width: 1
-      }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>RIICO Plot Map</title>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css">
+  <script src="https://js.arcgis.com/4.29/"></script>
+  <style>
+    html, body, #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
     }
-  },
-  labelingInfo: [{
-    labelExpressionInfo: {
-      expression: "$feature.PROPERTY_ID"  // Label field
-    },
-    symbol: {
-      type: "text",
-      color: "black",
-      haloColor: "white",
-      haloSize: "1px",
-      font: {
-        family: "Arial",
-        weight: "bold"
-      }
-    },
-    labelPlacement: "center-center",
-    visualVariables: [{
-      type: "size",
-      valueExpression: "$view.scale",
-      stops: [
-        { value: 100000, size: 6 },
-        { value: 50000, size: 10 },
-        { value: 20000, size: 14 },
-        { value: 10000, size: 18 }
-      ]
-    }]
-  }],
-  labelsVisible: true
-});
+  </style>
+</head>
+<body>
 
-// Add layer to the map
-map.add(plotBoundary);
+<div id="viewDiv"></div>
 
-// Adjust view
-view.center = [LONGITUDE, LATITUDE];  // Set your coordinates
-view.zoom = 12;  // Adjust zoom level
+<script>
+  require([
+    "esri/Map",
+    "esri/views/MapView",
+    "esri/layers/GeoJSONLayer"
+  ], function(Map, MapView, GeoJSONLayer) {
+
+    // Step 1: Create Map
+    const map = new Map({
+      basemap: "hybrid"
+    });
+
+    // Step 2: Create View
+    const view = new MapView({
+      container: "viewDiv",
+      map: map,
+      center: [75.7873, 26.9124], // Jaipur area
+      zoom: 15
+    });
+
+    // Step 3: Create GeoJSON Layer with Labels
+    const plotBoundary = new GeoJSONLayer({
+      url: "https://raw.githubusercontent.com/sgligis/riico-maps/main/Plot%20Boundary.geojson",
+      popupTemplate: {
+        title: "Plot Details",
+        content: "Plot ID: {PLOT_NUMBE}<br>Area: {RIICO_PLOT} sq m"
+      },
+      renderer: {
+        type: "simple",
+        symbol: {
+          type: "simple-fill",
+          color: [0, 255, 0, 0.5], // Green semi-transparent
+          outline: {
+            color: [0, 0, 0],
+            width: 1
+          }
+        }
+      },
+      labelingInfo: [{
+        labelExpressionInfo: {
+          expression: "$feature.PLOT_NUMBE"
+        },
+        symbol: {
+          type: "text",
+          color: "black",
+          haloColor: "white",
+          haloSize: "1px",
+          font: {
+            family: "Arial",
+            weight: "bold"
+          }
+        },
+        labelPlacement: "center-center",
+        visualVariables: [{
+          type: "size",
+          valueExpression: "$view.scale",
+          stops: [
+            { value: 100000, size: 6 },
+            { value: 50000, size: 10 },
+            { value: 20000, size: 14 },
+            { value: 10000, size: 18 }
+          ]
+        }]
+      }],
+      labelsVisible: true
+    });
+
+    // Step 4: Add Layer to Map
+    map.add(plotBoundary);
+
+    // Step 5: Zoom to Layer Extent When Ready
+    plotBoundary.when(() => {
+      view.goTo(plotBoundary.fullExtent).catch((error) => {
+        console.warn("Could not zoom to full extent:", error);
+      });
+    });
+  });
+</script>
+
+</body>
+</html>
